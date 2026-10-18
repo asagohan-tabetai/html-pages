@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<!--
+  explain 調査レポート HTML テンプレート（骨組みのみ）
+
+  scripts/render_report.py が二重波括弧のプレースホルダを置換して出力する。
+  プレースホルダの一覧と意味は scripts/README.md を参照すること。
+
+  注意: このコメント内にプレースホルダの literal を書くと、それ自体が置換対象と
+  なり本文が二重に出力されるため、ここには書かない。
+
+  本ファイルを直接開いても意味のある表示にはならない。
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="explain/render_report.py">
+<title>北欧旅行の確定スケジュール</title>
+<style>
+/*
+ * explain 調査レポート スタイルシート
+ *
+ * 本ファイルは `workspace/` 配下に出力する HTML レポートの
+ * 「見た目の唯一の SSOT」。scripts/render_report.py が本ファイルの内容を
+ * <style> として埋め込むため、生成物は単体ファイルで配布・閲覧できる。
+ *
+ * デザイン原則の正本: `.github/docs/policy/explanation-report-policy.md` §3.3.1
+ *   - 紙色の地に白面 + 黒の細罫 + 角丸。最上位のカードだけに淡い影を付け、地から浮かせる
+ *   - 有彩色はリンク青とアクセント赤に限定（差分色と Callout の意味色のみ機能色として例外）
+ *   - 外部リソース（Web フォント / CDN）を読み込まない（同 §3.3.2）
+ *
+ * 変更する場合は本ファイルだけを編集する。
+ * 生成された HTML に直接スタイルを書き足さないこと（次回生成で失われる）。
+ */
+
+:root {
+  --bg: #ecebe6;
+  --surface: #ffffff;
+  --ink: #111110;
+  --ink-body: #1a1a1a;
+  --border: #111110;
+  --rule: #dfdfdf;
+  --muted: #595959;
+  --faint: #a5a5a5;
+  --link: #2990da;
+  --accent: #d63a2f;
+  --code-bg: #f1efe9;
+
+  /* 機能色（意味を区別するためだけに使う。装飾に使わない） */
+  --fn-add-bg: #e6ffec;
+  --fn-add-ink: #1a7f37;
+  --fn-del-bg: #ffebe9;
+  --fn-del-ink: #cf222e;
+  --fn-warn: #b7791f;
+  --fn-ok: #1a7f37;
+
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    "Noto Sans JP", "Segoe UI", "Meiryo", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
+    "Ubuntu Mono", monospace;
+
+  --radius: 12px;
+  --border-w: 1.5px;
+  --measure: 1000px;
+
+  /* 最上位のカードだけに使う。本文内の表・コード・引用には付けない */
+  --shadow-card: 0 1px 2px rgba(17, 17, 16, 0.06),
+    0 6px 20px rgba(17, 17, 16, 0.08);
+  --shadow-sidebar: 2px 0 16px rgba(17, 17, 16, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink-body);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.9;
+  font-feature-settings: "palt";
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 全体レイアウト（左サイドバー + 本文） ---------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-shell.has-sidebar {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.page-column {
+  min-width: 0;
+}
+
+.report {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 40px 48px 64px;
+}
+
+/* ---------- サイドバー ---------- */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px 16px 32px;
+  border-right: var(--border-w) solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sidebar);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 24px;
+  padding: 0 8px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 700;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.brand-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.brand-title {
+  font-size: 0.9em;
+  font-weight: 700;
+}
+
+/* ---------- 目次 ---------- */
+
+.toc {
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+
+.toc-title {
+  margin: 0 0 8px;
+  padding: 0 8px;
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.toc ol {
+  list-style: none;
+  counter-reset: toc;
+  margin: 0;
+  padding: 0;
+}
+
+.toc > ol > li {
+  position: relative;
+  counter-increment: toc;
+  margin: 2px 0;
+}
+
+/* 章番号は 01, 02 … の等幅表示にして、項目名の頭を揃える */
+.toc > ol > li::before {
+  content: counter(toc, decimal-leading-zero);
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.toc a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: var(--ink-body);
+  text-decoration: none;
+}
+
+.toc > ol > li > a {
+  padding-left: 2.8em;
+}
+
+.toc ol ol {
+  padding-left: 3em;
+  font-size: 0.95em;
+}
+
+.toc ol ol a {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  color: var(--muted);
+}
+
+.toc a:hover {
+  background: var(--code-bg);
+  color: var(--link);
+}
+
+/* ---------- 文書一覧へのリンク ---------- */
+
+.index-link {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  line-height: 1.4;
+  text-decoration: none;
+  box-shadow: var(--shadow-card);
+}
+
+.index-link:hover {
+  background: var(--code-bg);
+}
+
+.index-link-label {
+  font-size: 0.85em;
+  font-weight: 700;
+}
+
+.index-link:hover .index-link-label {
+  color: var(--link);
+}
+
+.index-link-folder {
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  color: var(--muted);
+}
+
+/* 狭い画面でだけ使う一覧リンクと折りたたみ目次 */
+.mobile-nav {
+  display: none;
+}
+
+.mobile-nav .index-link {
+  margin: 0;
+}
+
+.mobile-toc {
+  padding: 10px 14px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.mobile-toc summary {
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mobile-toc .toc {
+  margin-top: 8px;
+}
+
+/* ---------- ヘッダー ---------- */
+
+.report-header {
+  padding: 28px 32px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.report-kicker {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 2px 12px;
+  border: var(--border-w) solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+}
+
+.report-title {
+  margin: 0;
+  padding-left: 18px;
+  border-left: 12px solid var(--ink);
+  font-size: 1.75em;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.source-path {
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+/* ---------- 文書情報 ---------- */
+
+.meta-card {
+  margin-top: 20px;
+  padding: 16px 24px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.card-title {
+  margin: 0 0 8px;
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+.report-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 20px;
+  margin: 0;
+  font-size: 0.88em;
+}
+
+.report-meta dt {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.report-meta dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+/* ---------- 本文カード ---------- */
+
+.report-body {
+  margin-top: 20px;
+  padding: 32px 40px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.report-body > :first-child {
+  margin-top: 0;
+}
+
+/* ---------- 本文の見出し ---------- */
+
+.report-body h2,
+.report-body h3,
+.report-body h4 {
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.45;
+  scroll-margin-top: 16px;
+}
+
+.report-body h2 {
+  margin: 56px 0 16px;
+  padding-left: 14px;
+  border-left: 10px solid var(--ink);
+  font-size: 1.35em;
+}
+
+.report-body h3 {
+  margin: 36px 0 12px;
+  font-size: 1.12em;
+}
+
+.report-body h4 {
+  margin: 28px 0 10px;
+  font-size: 1em;
+  color: var(--muted);
+}
+
+.report-body h2:first-child,
+.report-body h3:first-child {
+  margin-top: 0;
+}
+
+/* ---------- 本文要素 ---------- */
+
+.report-body p {
+  margin: 12px 0;
+}
+
+.report-body a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.report-body a:hover {
+  text-decoration: underline;
+}
+
+.report-body strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* 斜体は日本語で判別しづらいため、赤の強調へ置き換える（1 ページ内で多用しない） */
+.report-body em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.report-body ul,
+.report-body ol {
+  margin: 12px 0;
+  padding-left: 1.6em;
+}
+
+.report-body li {
+  margin: 4px 0;
+}
+
+.report-body li > ul,
+.report-body li > ol {
+  margin: 4px 0;
+}
+
+.report-body ul {
+  list-style: none;
+}
+
+.report-body ul > li {
+  position: relative;
+}
+
+.report-body ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.15em;
+  top: 0.85em;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.report-body ul ul > li::before {
+  top: 0.9em;
+  width: 0.3em;
+  height: 0.3em;
+  background: var(--muted);
+}
+
+.report-body hr {
+  height: 0;
+  margin: 40px 0;
+  border: none;
+  border-top: var(--border-w) solid var(--rule);
+}
+
+/* ---------- 表 ---------- */
+
+.table-wrap {
+  margin: 16px 0 24px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: 0.9em;
+  line-height: 1.7;
+}
+
+th,
+td {
+  padding: 8px 12px;
+  border: var(--border-w) solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+
+th {
+  border-bottom: var(--border-w) solid var(--border);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* 行見出し列。折り返しを禁止して残り幅を本文列へ譲る */
+th.rowlabel,
+td.rowlabel {
+  white-space: nowrap;
+}
+
+td.align-center,
+th.align-center {
+  text-align: center;
+}
+
+td.align-right,
+th.align-right {
+  text-align: right;
+}
+
+/* ---------- コード ---------- */
+
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.report-body p code,
+.report-body li code,
+.report-body td code,
+.report-body th code,
+.report-meta dd code {
+  padding: 0.08em 0.35em;
+  border-radius: 5px;
+  background: var(--code-bg);
+  color: var(--ink);
+}
+
+pre {
+  margin: 20px 0;
+  padding: 16px 20px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-body);
+  font-size: 0.86em;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: 1em;
+}
+
+/* ---------- 差分（```diff）---------- */
+/* 緑・赤の淡背景は「追加 / 削除」を区別する機能色。装飾には使わない */
+
+pre.diff {
+  padding: 12px 0;
+  /* 行スパン側だけ pre にして、span 間の改行が空行にならないようにする */
+  white-space: normal;
+}
+
+pre.diff .diff-add,
+pre.diff .diff-del,
+pre.diff .diff-ctx {
+  display: block;
+  padding: 1px 20px 1px 8px;
+  white-space: pre;
+}
+
+pre.diff .diff-add {
+  background: var(--fn-add-bg);
+  color: var(--fn-add-ink);
+}
+
+pre.diff .diff-del {
+  background: var(--fn-del-bg);
+  color: var(--fn-del-ink);
+}
+
+/* ---------- 引用 / Callout ---------- */
+
+blockquote {
+  margin: 24px 0;
+  padding: 16px 24px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-body);
+}
+
+blockquote > :first-child {
+  margin-top: 0;
+}
+
+blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.callout {
+  margin: 24px 0;
+  padding: 16px 24px;
+  border: var(--border-w) solid var(--border);
+  border-left-width: 8px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.callout > :first-child {
+  margin-top: 0;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+.callout-label {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.callout-note {
+  border-left-color: var(--link);
+}
+
+.callout-note .callout-label {
+  color: var(--link);
+}
+
+.callout-tip {
+  border-left-color: var(--fn-ok);
+}
+
+.callout-tip .callout-label {
+  color: var(--fn-ok);
+}
+
+.callout-warning {
+  border-left-color: var(--fn-warn);
+}
+
+.callout-warning .callout-label {
+  color: var(--fn-warn);
+}
+
+.callout-danger {
+  border-left-color: var(--accent);
+}
+
+.callout-danger .callout-label {
+  color: var(--accent);
+}
+
+/* ---------- フッター ---------- */
+
+.report-footer {
+  margin-top: 64px;
+  padding-top: 16px;
+  border-top: var(--border-w) solid var(--rule);
+  color: var(--faint);
+  font-size: 0.78em;
+}
+
+.report-footer p {
+  margin: 0.3em 0;
+}
+
+.report-footer code {
+  color: inherit;
+}
+
+/* ---------- 文書一覧ページ ---------- */
+
+/* 一覧ページでは本文の外枠を消し、フォルダごとのカードを並べる。 */
+.page-index .report-body {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.index-group {
+  padding: 20px 24px;
+  border: var(--border-w) solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.index-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: var(--border-w) solid var(--rule);
+}
+
+.index-mark {
+  display: grid;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.index-group-text {
+  min-width: 0;
+}
+
+.report-body .index-group h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.report-body .index-count {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.report-body ul.index-list {
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.report-body ul.index-list > li {
+  margin: 0;
+  border-top: var(--border-w) solid var(--rule);
+}
+
+.report-body ul.index-list > li:first-child {
+  border-top: none;
+}
+
+.report-body ul.index-list > li::before {
+  content: none;
+}
+
+.report-body .index-list a {
+  display: block;
+  padding: 10px 4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.index-title {
+  display: block;
+  font-weight: 700;
+}
+
+.report-body .index-list a:hover .index-title {
+  color: var(--link);
+}
+
+.index-path {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 画面幅 ---------- */
+
+@media (max-width: 1000px) {
+  .report {
+    padding: 24px 20px 48px;
+  }
+}
+
+@media (max-width: 900px) {
+  .index-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell.has-sidebar {
+    display: block;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 20px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+
+  .report-header,
+  .report-body {
+    padding: 20px;
+  }
+
+  .report-meta {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .report-meta dd {
+    margin-bottom: 8px;
+  }
+
+  .index-group {
+    padding: 16px 18px;
+  }
+}
+
+/* ---------- 印刷 ---------- */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 紙では影がにじむため罫線だけにする */
+  .sidebar,
+  .report-header,
+  .meta-card,
+  .report-body,
+  .index-group {
+    box-shadow: none;
+  }
+
+  .index-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .index-group {
+    break-inside: avoid;
+  }
+
+  /* 紙ではサイドバーを解体し、タイトル → 文書情報 → 目次 → 本文の順に縦へ並べる */
+  .app-shell.has-sidebar {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-column,
+  .report {
+    display: contents;
+  }
+
+  .report-header {
+    order: 1;
+  }
+
+  .meta-card {
+    order: 2;
+  }
+
+  .sidebar {
+    order: 3;
+    display: block;
+    position: static;
+    height: auto;
+    overflow: visible;
+    margin-top: 20px;
+    padding: 12px 20px;
+    border: var(--border-w) solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .report-body {
+    order: 4;
+    padding: 0;
+    border: none;
+  }
+
+  .report-footer {
+    order: 5;
+  }
+
+  .sidebar-brand,
+  .index-link,
+  .mobile-nav {
+    display: none;
+  }
+
+  /* 目次の無いサイドバーは紙に載せるものが無いため出さない */
+  .sidebar:not(:has(.toc)) {
+    display: none;
+  }
+
+  .report {
+    max-width: none;
+    padding: 0;
+  }
+
+  .report-body h2,
+  .report-body h3,
+  .report-body h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .sidebar,
+  pre,
+  table,
+  tr,
+  blockquote,
+  .callout,
+  .table-wrap,
+  .meta-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-body a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  /* 紙では URL が辿れないため、外部リンクは URL を併記する */
+  .report-body a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+}
+</style>
+</head>
+<body class="page-report">
+<div class="app-shell has-sidebar">
+<aside class="sidebar">
+<a class="index-link" href="index.html"><span class="index-link-label">文書一覧</span><span class="index-link-folder">オーロラ</span></a>
+<a class="sidebar-brand" href="#top"><span class="brand-mark">北</span><span class="brand-text"><span class="brand-kicker">調査レポート</span><span class="brand-title">北欧旅行の確定スケジュール</span></span></a>
+<nav class="toc" aria-label="目次">
+<p class="toc-title">目次</p>
+<ol>
+<li><a href="#sec-1">検討中の観光</a></li>
+<li><a href="#sec-2">宿泊とオーロラ観賞の日程</a>
+<ol>
+<li><a href="#sec-2-1">確定した宿泊先</a></li>
+</ol></li>
+</ol>
+</nav>
+</aside>
+<div class="page-column">
+<div class="mobile-nav">
+<a class="index-link" href="index.html"><span class="index-link-label">文書一覧</span><span class="index-link-folder">オーロラ</span></a>
+<details class="mobile-toc">
+<summary>目次</summary>
+<nav class="toc" aria-label="目次">
+<ol>
+<li><a href="#sec-1">検討中の観光</a></li>
+<li><a href="#sec-2">宿泊とオーロラ観賞の日程</a>
+<ol>
+<li><a href="#sec-2-1">確定した宿泊先</a></li>
+</ol></li>
+</ol>
+</nav>
+</details>
+</div>
+<main class="report" id="top">
+<header class="report-header">
+<p class="report-kicker">調査レポート</p>
+<h1 class="report-title">北欧旅行の確定スケジュール</h1>
+<p class="source-path">旅行スケジュール.md</p>
+</header>
+<section class="meta-card">
+<p class="card-title">文書情報</p>
+<dl class="report-meta">
+<dt>更新日</dt><dd>2026-10-18</dd>
+</dl>
+</section>
+<article class="report-body">
+<p>旅行人数：大人3人。旅行期間：2026年12月26日〜2027年1月3日。ホテル予算はストックホルムとヘルシンキが3人1室・1泊合計30,000円以内。トロムソは3人3泊合計240,000円以内に変更。トロムソはベッド3つ、夜間チェックイン、オーロラ観賞スポットへの公共交通アクセスを重視する。</p>
+<p>以下はユーザーから共有された移動日程と確定した体験予定。時刻は各都市の現地時刻として整理。</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>日付</th>
+<th>時刻</th>
+<th>確定している予定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>12月26日</td>
+<td>17:25</td>
+<td>大阪発</td>
+</tr>
+<tr>
+<td>12月27日</td>
+<td>06:45</td>
+<td>ストックホルム着</td>
+</tr>
+<tr>
+<td>12月28日</td>
+<td>17:30</td>
+<td>ストックホルム発</td>
+</tr>
+<tr>
+<td>12月28日</td>
+<td>22:45</td>
+<td>トロムソ着</td>
+</tr>
+<tr>
+<td>12月29日</td>
+<td>18:45〜</td>
+<td>トロムソで<a href="https://gyg.me/85xcWlLZ">オーロラツアー</a></td>
+</tr>
+<tr>
+<td>12月30日</td>
+<td>13:30〜</td>
+<td>トロムソで<a href="https://gyg.me/k059dLkk">犬ぞり体験</a></td>
+</tr>
+<tr>
+<td>12月31日</td>
+<td>10:35</td>
+<td>トロムソ発</td>
+</tr>
+<tr>
+<td>12月31日</td>
+<td>14:40</td>
+<td>ヘルシンキ着</td>
+</tr>
+<tr>
+<td>1月1日</td>
+<td>時刻未定</td>
+<td>ヘルシンキで<a href="https://maps.app.goo.gl/ismjdSEEYyBdT5Xw5?g_st=ic">サウナに行く予定（Google マップ）</a></td>
+</tr>
+<tr>
+<td>1月2日</td>
+<td>16:40</td>
+<td>ヘルシンキ発</td>
+</tr>
+<tr>
+<td>1月3日</td>
+<td>12:30</td>
+<td>大阪着</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>情報源：ユーザー提供のスケジュール。旅行年と宿泊予算は2026年10月3日にユーザーが確認。オーロラツアー・犬ぞり・サウナの予定とリンクは2026年10月18日にユーザーが共有。航空会社、便名、空港名、経由地は未提示。</p>
+<h2 id="sec-1">検討中の観光</h2>
+<ul><li>12月29日の日中：トロムソでフィヨルドを見に行く案。実施するか、行き先・移動手段・時刻は未定。同日18:45からのオーロラツアーに参加できる時間帯で検討する。</li></ul>
+<h2 id="sec-2">宿泊とオーロラ観賞の日程</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>都市</th>
+<th>宿泊期間</th>
+<th>宿泊予算の上限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ストックホルム</td>
+<td>2026年12月27日〜28日・1泊</td>
+<td>30,000円</td>
+</tr>
+<tr>
+<td>トロムソ</td>
+<td>2026年12月28日〜31日・3泊</td>
+<td>240,000円</td>
+</tr>
+<tr>
+<td>ヘルシンキ</td>
+<td>2026年12月31日〜2027年1月2日・2泊</td>
+<td>60,000円</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="sec-2-1">確定した宿泊先</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>都市</th>
+<th>宿泊先（Google マップ）</th>
+<th>住所</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ストックホルム</td>
+<td><a href="https://maps.app.goo.gl/XUiuuq9kyiFd4dTK9?g_st=ic">キャッスル ハウス イン</a></td>
+<td>Brunnsgränd 4, 111 30 Stockholm</td>
+</tr>
+<tr>
+<td>トロムソ</td>
+<td><a href="https://maps.app.goo.gl/DBVadX6JZofb8GCL8?g_st=ic">宿泊先：Dramsvegen 109</a></td>
+<td>Dramsvegen 109, 9010 Tromsø</td>
+</tr>
+<tr>
+<td>ヘルシンキ</td>
+<td><a href="https://maps.app.goo.gl/okKruFZ2i5W8iaE6A?g_st=ic">ホテル アーサー</a></td>
+<td>Vuorikatu 19, 00100 Helsinki</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>宿泊先は2026年10月18日にユーザーが確定情報として共有。施設名・住所は共有されたGoogle マップのリンク先で確認。トロムソのリンク先は住所表示のため、施設名は未確認。上の宿泊予算は予算の上限であり、確定した宿泊料金ではない。</p>
+<p>トロムソは12月28日22:45に空港到着。ホテル到着が翌日になっても、予約開始日は12月28日とし、深夜到着の受け入れを確認する。</p>
+<p>オーロラツアーは12月29日18:45から、犬ぞりは12月30日13:30からに決定。開始時刻とリンクは上の表を参照。サウナは2027年1月1日に行く予定で、時刻は未定。予約手続きの完了状況、ツアーの集合場所・帰着時刻、サウナの予約時刻は本資料では未確認。</p>
+<p><a href="12月29日のオーロラツアー空席と評判調査.html">オーロラツアーの候補・料金の過去調査を見る</a></p>
+<p><a href="ホテル候補調査.html">空室・料金の調査結果を見る</a></p>
+</article>
+<footer class="report-footer">
+<p>本 HTML は <code>render_report.py</code> による生成物です。直接編集せず、元の Markdown を修正して再生成してください。</p>
+<p>元ファイル: <code>旅行スケジュール.md</code> / 生成: 2026-10-18 23:45</p>
+</footer>
+</main>
+</div>
+</div>
+</body>
+</html>
